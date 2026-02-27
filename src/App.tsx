@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
@@ -6,8 +6,8 @@ import {
   Sparkles, Clock, Flame, ArrowLeft, ShoppingBag, CheckCircle2, TrendingUp, 
   Save, Leaf, Scale, Check, BookOpen, 
   Repeat, ShoppingCart, CalendarDays, ListChecks, ChevronRight, 
-  Utensils, PartyPopper, Star, Share2, Trash, Search, HeartPulse, 
-  ChevronLeft, Zap, Smile, ThermometerSnowflake, Settings2, X, Loader2, User
+  Utensils, PartyPopper, Star, Share2, Trash, Search, 
+  ChevronLeft, ThermometerSnowflake, Settings2, X, Loader2, User
 } from 'lucide-react';
 
 // --- 1. CONFIGURACIÓN DE SERVIDORES Y API BLINDADA ---
