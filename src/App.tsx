@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// IMPORTANTE PARA VERCEL: Descomenta la siguiente línea y elimina el bloque 'Mock' más abajo.
-// import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
   LayoutGrid, ChefHat, Plus, Trash2, 
@@ -11,47 +10,12 @@ import {
   ChevronLeft, Zap, Smile, ThermometerSnowflake, Settings2, X, Loader2, User
 } from 'lucide-react';
 
-// --- 1. CONFIGURACIÓN DE SERVIDORES Y API ---
-const SUPABASE_URL = 'https://elyhzridjfsmvfhnalex.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVseWh6cmlkamZzbXZmaG5hbGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4OTAzOTQsImV4cCI6MjA4NzQ2NjM5NH0.Q8DAPKhPVNBuTNtylOcLg_7lZtS72nBiJv44yWcieXI'; // <-- Pon aquí tu clave de Supabase
-const GEMINI_API_KEY = 'AIzaSyAZyaFgu0NZNw9X9PtiOmkipnDY5OfJBok'; // <-- Pon aquí tu API Key de Gemini
+// --- 1. CONFIGURACIÓN DE SERVIDORES Y API BLINDADA ---
+// 🛡️ Las claves ahora están protegidas. Las coge de Vercel directamente.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://tu-proyecto.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'tu-clave-segura'; 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''; 
 
-// --- MOCK TEMPORAL PARA VISTA PREVIA (BÓRRALO CUANDO SUBAS A VERCEL) ---
-const createClient = (url: string, key: string) => {
-  const mockChain: any = {
-    select: () => mockChain, eq: () => mockChain, single: () => mockChain,
-    upsert: () => mockChain, insert: () => mockChain, delete: () => mockChain,
-    update: () => mockChain, then: (resolve: any) => resolve({ data: null, error: null })
-  };
-  let authCallback = (event: string, session: any) => {};
-  return {
-    auth: {
-      getSession: async () => {
-         const localUser = localStorage.getItem('mock_user');
-         return { data: { session: localUser ? { user: { id: localUser } } : null } };
-      },
-      onAuthStateChange: (cb: any) => {
-         authCallback = cb; return { data: { subscription: { unsubscribe: () => {} } } };
-      },
-      signUp: async ({email}:any) => {
-         alert("⚠️ Modo vista previa. Simulando registro local."); return { error: null };
-      },
-      signInWithPassword: async ({email}:any) => {
-         localStorage.setItem('mock_user', email);
-         authCallback('SIGNED_IN', { user: { id: email } });
-         return { error: null };
-      },
-      signOut: async () => {
-         localStorage.removeItem('mock_user');
-         authCallback('SIGNED_OUT', null);
-         return { error: null };
-      }
-    },
-    from: () => mockChain
-  };
-};
-
-// Usamos el cliente REAL de Supabase directamente (sin simuladores)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- 2. ESTILOS ANIMADOS PREMIUM ---
@@ -109,6 +73,7 @@ const LOADING_MESSAGES = ["Afilando los cuchillos virtuales...", "Consultando el
 // --- 5. LÓGICA DE IA ---
 const generateRealPlan = async (apiKey: string, ingredients: Ingredient[], profile: UserProfile, mode: 'aprovechamiento' | 'chef', planType: 'daily' | 'batch', batchConfig: BatchConfig): Promise<MealPlan | null> => {
   try {
+    if (!apiKey) throw new Error("Falta la API Key de Gemini en las Variables de Entorno de Vercel.");
     const genAI = new GoogleGenerativeAI(apiKey.trim());
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json" } });
     
@@ -159,7 +124,7 @@ const generateRealPlan = async (apiKey: string, ingredients: Ingredient[], profi
     const result = await model.generateContent(basePrompt + "\n" + jsonSchema);
     return JSON.parse(result.response.text());
   } catch (error: any) {
-    alert(`Error de conexión con la IA. Asegúrate de que las claves están puestas en el código. (${error.message})`);
+    alert(`Error de IA: Asegúrate de configurar la nueva API Key en Vercel. Detalles: ${error.message}`);
     return null;
   }
 };
@@ -220,11 +185,11 @@ const AuthView = () => {
         setLoading(true);
         if (isSignUp) {
             const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert((error as any).message); // FIX: Forzar tipo any para Vercel
+            if (error) alert((error as any).message); 
             else alert("¡Cuenta creada! Ya puedes iniciar sesión.");
         } else {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert("Error al iniciar sesión: " + (error as any).message); // FIX: Forzar tipo any
+            if (error) alert("Error al iniciar sesión: " + (error as any).message); 
         }
         setLoading(false);
     };
@@ -453,7 +418,6 @@ const PantryView = ({ ingredients, setIngredients }: any) => {
     setIngredients(ingredients.map((i: any) => {
       if (i.id !== id) return i;
       const next: Record<ExpiryStatus, ExpiryStatus> = { 'fresh': 'soon', 'soon': 'urgent', 'urgent': 'fresh' };
-      // FIX: Asegurar para Vercel (TS) que la variable entra correctamente
       return { ...i, expiryStatus: next[i.expiryStatus as ExpiryStatus] }; 
     }));
   };
@@ -836,7 +800,6 @@ const PlannerView = ({ plan, onReset, loading, onGenerate, planType, setPlanType
       {plan && !loading && (
         <div className="space-y-6 animate-in slide-in-from-bottom-8">
           
-          {/* TARJETA DE LISTA DE COMPRA AUTOMÁTICA CON ANIMACIÓN */}
           {plan.shopping_list && plan.shopping_list.length > 0 && (
               <div className="bg-orange-50 p-6 rounded-[2rem] border-2 border-orange-200 shadow-sm flex flex-col items-center text-center animate-fade-slide">
                   <ShoppingBag className="text-orange-500 mb-3" size={32}/>
@@ -850,7 +813,6 @@ const PlannerView = ({ plan, onReset, loading, onGenerate, planType, setPlanType
 
           {plan.type === 'batch' ? (
             <>
-              {/* 1. LISTA DE RECETAS RESULTANTES (ARRIBA) */}
               <h3 className="text-2xl font-black text-stone-800 mb-6 px-2 flex items-center gap-2 animate-fade-slide" style={{animationDelay: '100ms'}}><Utensils className="text-teal-500"/> Menú Resultante</h3>
               <div className="space-y-6 mb-10">
                   {plan.days?.map((day: any, idx: number) => (
@@ -882,7 +844,6 @@ const PlannerView = ({ plan, onReset, loading, onGenerate, planType, setPlanType
                   ))}
               </div>
 
-              {/* 2. MASTERCLASS BATCH UI (ABAJO) */}
               <div className="bg-white p-8 rounded-[2.5rem] border-2 border-stone-100 shadow-lg mb-8 animate-fade-slide" style={{animationDelay: '500ms'}}>
                   <div className="flex items-center gap-3 mb-6">
                       <div className="bg-orange-100 p-3 rounded-2xl"><ListChecks className="text-orange-500" size={28}/></div>
@@ -1077,7 +1038,6 @@ export default function App() {
           const { data: h } = await supabase.from('history').select('*').eq('user_id', uid);
           const { data: l } = await supabase.from('shopping_list').select('*').eq('user_id', uid);
           
-          let hasProfile = false;
           if(p) {
               let safeAlg = p.allergies;
               if (typeof safeAlg === 'string') safeAlg = [safeAlg];
@@ -1085,19 +1045,31 @@ export default function App() {
               setProfile({ ...p, allergies: safeAlg });
               setSavings(p.savings || 0);
               setWasteSaved(p.waste_saved || 0);
-              hasProfile = true;
+              setView('dashboard'); // Encontrado en Supabase, ir al Dashboard
+          } else {
+              // FIX DEL BUCLE: Si no está en Supabase, comprobamos el almacenamiento local.
+              const localProfileStr = localStorage.getItem('platoplan_profile');
+              if (localProfileStr) {
+                  const localProfile = JSON.parse(localProfileStr);
+                  setProfile(localProfile);
+                  setView('dashboard'); 
+                  // Intentamos forzar la subida a Supabase de fondo por si falló la vez anterior.
+                  supabase.from('profiles').upsert({ id: uid, name: localProfile.name, style: localProfile.style, allergies: localProfile.allergies, people: localProfile.people, ages: localProfile.ages, robot: localProfile.robot });
+              } else {
+                  // No hay datos ni en la nube ni locales. ES UN USUARIO NUEVO REAL.
+                  setView('onboarding');
+              }
           }
+
           if(i) setIngredients(i.map((x:any)=>({ ...x, expiryStatus: x.expiry_status })));
           if(h) setHistory(h.map((x:any)=>({ ...x.recipe_data, date: x.date }))); 
           if(l) setShoppingList(l);
           
-          if(hasProfile) {
-              setView('dashboard');
-          } else {
-              setView('onboarding');
-          }
       } catch (err) {
           console.error("Error cargando datos de Supabase", err);
+          // Si hay error (como RLS), miramos si al menos tenemos datos locales para no bloquear al usuario
+          if (localStorage.getItem('platoplan_profile')) setView('dashboard');
+          else setView('onboarding');
       }
       setGlobalLoading(false);
   };
@@ -1141,7 +1113,8 @@ export default function App() {
   }
 
   const generate = async () => {
-    if (!GEMINI_API_KEY || (GEMINI_API_KEY as string) === 'TU_CLAVE_GEMINI_AQUI') return alert("El desarrollador debe configurar la API Key de Gemini en el código fuente (línea 16).");
+    // BLINDAJE: Comprueba si la variable de Vercel está inyectada.
+    if (!GEMINI_API_KEY) return alert("Falta configurar la variable VITE_GEMINI_API_KEY en Vercel o en tu .env local.");
     if (ingredients.length === 0) return alert("¡Añade algo a la nevera primero!");
     
     setLoading(true);
