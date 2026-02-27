@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// --- IMPORTANTE: DESCOMENTA ESTA LÍNEA CUANDO LO SUBAS A VERCEL ---
+// IMPORTANTE PARA VERCEL: Descomenta la siguiente línea y elimina el bloque 'Mock' más abajo.
 // import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
@@ -11,8 +11,12 @@ import {
   ChevronLeft, Zap, Smile, ThermometerSnowflake, Settings2, X, Loader2, User
 } from 'lucide-react';
 
-// --- MOCK TEMPORAL PARA EVITAR ERRORES DE COMPILACIÓN EN ESTA VISTA PREVIA ---
-// Elimina esta función createClient cuando despliegues en Vercel.
+// --- 1. CONFIGURACIÓN DE SERVIDORES Y API ---
+const SUPABASE_URL = 'https://elyhzridjfsmvfhnalex.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVseWh6cmlkamZzbXZmaG5hbGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4OTAzOTQsImV4cCI6MjA4NzQ2NjM5NH0.Q8DAPKhPVNBuTNtylOcLg_7lZtS72nBiJv44yWcieXI'; // <-- Pon aquí tu clave de Supabase
+const GEMINI_API_KEY = 'AIzaSyAZyaFgu0NZNw9X9PtiOmkipnDY5OfJBok'; // <-- Pon aquí tu API Key de Gemini
+
+// --- MOCK TEMPORAL PARA VISTA PREVIA (BÓRRALO CUANDO SUBAS A VERCEL) ---
 const createClient = (url: string, key: string) => {
   const mockChain: any = {
     select: () => mockChain, eq: () => mockChain, single: () => mockChain,
@@ -47,11 +51,7 @@ const createClient = (url: string, key: string) => {
   };
 };
 
-// --- 1. CONFIGURACIÓN DE SERVIDORES Y API ---
-const SUPABASE_URL = 'https://elyhzridjfsmvfhnalex.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVseWh6cmlkamZzbXZmaG5hbGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4OTAzOTQsImV4cCI6MjA4NzQ2NjM5NH0.Q8DAPKhPVNBuTNtylOcLg_7lZtS72nBiJv44yWcieXI'; // <-- Pon aquí tu clave de Supabase
-const GEMINI_API_KEY = 'AIzaSyAZyaFgu0NZNw9X9PtiOmkipnDY5OfJBok'; // <-- Pon aquí tu API Key de Gemini
-
+// Usamos el cliente REAL de Supabase directamente (sin simuladores)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- 2. ESTILOS ANIMADOS PREMIUM ---
@@ -100,33 +100,11 @@ interface BatchConfig { days: number; meals: ('lunch'|'dinner')[]; }
 type ViewState = 'auth' | 'onboarding' | 'dashboard' | 'pantry' | 'planner' | 'recipe-detail' | 'history' | 'shopping';
 
 // --- 4. CONSTANTES DE DATOS ---
-const STAPLES = [
-  { name: 'Huevos', cat: 'protein' as IngredientCat }, { name: 'Leche', cat: 'dairy' as IngredientCat }, { name: 'Tomate', cat: 'veg' as IngredientCat },
-  { name: 'Pollo', cat: 'protein' as IngredientCat }, { name: 'Arroz', cat: 'pantry' as IngredientCat }, { name: 'Pasta', cat: 'pantry' as IngredientCat }
-];
-
-const DIET_OPTIONS = [
-    { id: 'Clásica', desc: 'Sin restricciones' }, { id: 'Baja en Carbos', desc: 'Pocos azúcares y harinas' },
-    { id: 'Keto', desc: 'Grasas saludables, cero carbos' }, { id: 'Vegetariana', desc: 'Sin carne ni pescado' },
-    { id: 'Vegana', desc: '100% origen vegetal' }, { id: 'Antiinflamatoria', desc: 'Para cuidar tu intestino' }
-];
-
-const DISLIKES_OPTIONS = [
-  'Aguacate', 'Ternera', 'Pimientos', 'Coliflor', 'Berenjena', 'Huevos', 'Queso de cabra', 
-  'Champiñones', 'Cerdo', 'Salmón', 'Marisco', 'Atún', 'Cilantro', 'Lácteos', 'Gluten'
-];
-
+const STAPLES = [{ name: 'Huevos', cat: 'protein' as IngredientCat }, { name: 'Leche', cat: 'dairy' as IngredientCat }, { name: 'Tomate', cat: 'veg' as IngredientCat }, { name: 'Pollo', cat: 'protein' as IngredientCat }, { name: 'Arroz', cat: 'pantry' as IngredientCat }, { name: 'Pasta', cat: 'pantry' as IngredientCat }];
+const DIET_OPTIONS = [{ id: 'Clásica', desc: 'Sin restricciones' }, { id: 'Baja en Carbos', desc: 'Pocos azúcares y harinas' }, { id: 'Keto', desc: 'Grasas saludables, cero carbos' }, { id: 'Vegetariana', desc: 'Sin carne ni pescado' }, { id: 'Vegana', desc: '100% origen vegetal' }, { id: 'Antiinflamatoria', desc: 'Para cuidar tu intestino' }];
+const DISLIKES_OPTIONS = ['Aguacate', 'Ternera', 'Pimientos', 'Coliflor', 'Berenjena', 'Huevos', 'Queso de cabra', 'Champiñones', 'Cerdo', 'Salmón', 'Marisco', 'Atún', 'Cilantro', 'Lácteos', 'Gluten'];
 const ROBOT_OPTIONS = ['Ninguno (A mano)', 'Robot tipo TM', 'Freidora de aire', 'Robot Multifunción', 'Olla lenta'];
-
-const LOADING_MESSAGES = [
-    "Afilando los cuchillos virtuales...",
-    "Consultando el libro secreto de la abuela...",
-    "Precalentando el horno a tope...",
-    "Calculando los tuppers perfectos...",
-    "Organizando tus comidas de la semana...",
-    "Revisando qué te falta comprar...",
-    "Emplatando virtualmente..."
-];
+const LOADING_MESSAGES = ["Afilando los cuchillos virtuales...", "Consultando el libro secreto de la abuela...", "Precalentando el horno a tope...", "Calculando los tuppers perfectos...", "Organizando tus comidas de la semana...", "Revisando qué te falta comprar...", "Emplatando virtualmente..."];
 
 // --- 5. LÓGICA DE IA ---
 const generateRealPlan = async (apiKey: string, ingredients: Ingredient[], profile: UserProfile, mode: 'aprovechamiento' | 'chef', planType: 'daily' | 'batch', batchConfig: BatchConfig): Promise<MealPlan | null> => {
@@ -138,7 +116,9 @@ const generateRealPlan = async (apiKey: string, ingredients: Ingredient[], profi
     const availableIngs = ingredients.map(i => i.name).join(", ");
     const context = mode === 'aprovechamiento' ? `CRÍTICO (caduca ya): ${urgentIngs}. OTROS: ${availableIngs}.` : `USAR: ${availableIngs}.`;
     
-    const safeAllergies = Array.isArray(profile.allergies) ? profile.allergies : [];
+    let safeAllergies: string[] = [];
+    if (Array.isArray(profile.allergies)) safeAllergies = profile.allergies;
+    else if (typeof profile.allergies === 'string') safeAllergies = [profile.allergies];
     const allergiesText = safeAllergies.length > 0 ? safeAllergies.join(", ") : "Ninguna";
 
     let taskPrompt = "";
@@ -240,11 +220,11 @@ const AuthView = () => {
         setLoading(true);
         if (isSignUp) {
             const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert(error.message);
+            if (error) alert((error as any).message); // FIX: Forzar tipo any para Vercel
             else alert("¡Cuenta creada! Ya puedes iniciar sesión.");
         } else {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert("Error al iniciar sesión: " + error.message);
+            if (error) alert("Error al iniciar sesión: " + (error as any).message); // FIX: Forzar tipo any
         }
         setLoading(false);
     };
@@ -473,7 +453,8 @@ const PantryView = ({ ingredients, setIngredients }: any) => {
     setIngredients(ingredients.map((i: any) => {
       if (i.id !== id) return i;
       const next: Record<ExpiryStatus, ExpiryStatus> = { 'fresh': 'soon', 'soon': 'urgent', 'urgent': 'fresh' };
-      return { ...i, expiryStatus: next[i.expiryStatus] };
+      // FIX: Asegurar para Vercel (TS) que la variable entra correctamente
+      return { ...i, expiryStatus: next[i.expiryStatus as ExpiryStatus] }; 
     }));
   };
 
@@ -1040,7 +1021,6 @@ const ConsumptionModal = ({recipe, ingredients, onConfirm, onClose}:any) => {
     );
 };
 
-// --- 8. APP PRINCIPAL Y ENRUTAMIENTO ---
 export default function App() {
   const [user, setUser] = useState<any>(null);
   
@@ -1049,6 +1029,7 @@ export default function App() {
         const s = localStorage.getItem('platoplan_profile');
         if (s) {
             const p = JSON.parse(s);
+            if (typeof p.allergies === 'string') p.allergies = [p.allergies];
             if (!Array.isArray(p.allergies)) p.allergies = [];
             if (!p.style) p.style = "Clásica";
             return p;
@@ -1075,12 +1056,12 @@ export default function App() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session } }: any) => {
           if(session) { setUser(session.user); loadCloudData(session.user.id); } 
           else { setGlobalLoading(false); setView('auth'); }
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
           setUser(session?.user ?? null);
           if(session?.user) { loadCloudData(session.user.id); }
           else { setView('auth'); }
@@ -1098,7 +1079,10 @@ export default function App() {
           
           let hasProfile = false;
           if(p) {
-              setProfile({ ...p, allergies: p.allergies || [] });
+              let safeAlg = p.allergies;
+              if (typeof safeAlg === 'string') safeAlg = [safeAlg];
+              if (!Array.isArray(safeAlg)) safeAlg = [];
+              setProfile({ ...p, allergies: safeAlg });
               setSavings(p.savings || 0);
               setWasteSaved(p.waste_saved || 0);
               hasProfile = true;
@@ -1157,7 +1141,7 @@ export default function App() {
   }
 
   const generate = async () => {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'TU_CLAVE_GEMINI_AQUI') return alert("El desarrollador debe configurar la API Key de Gemini en el código fuente (línea 16).");
+    if (!GEMINI_API_KEY || (GEMINI_API_KEY as string) === 'TU_CLAVE_GEMINI_AQUI') return alert("El desarrollador debe configurar la API Key de Gemini en el código fuente (línea 16).");
     if (ingredients.length === 0) return alert("¡Añade algo a la nevera primero!");
     
     setLoading(true);
