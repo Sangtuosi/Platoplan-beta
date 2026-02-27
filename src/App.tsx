@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-// ⚠️ IMPORTANTE PARA VERCEL: 
-// Descomenta la siguiente línea (quítale las dos barras //) cuando subas tu código a GitHub.
-// import { createClient } from '@supabase/supabase-js';
+// ⚠️ IMPORTANTE PARA VERCEL: Descomentar la siguiente línea
+import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
   LayoutGrid, ChefHat, Plus, Trash2, 
@@ -31,8 +30,7 @@ const SUPABASE_URL = getEnv('VITE_SUPABASE_URL', 'https://tu-proyecto.supabase.c
 const SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY', 'tu-clave-segura'); 
 const GEMINI_API_KEY = getEnv('VITE_GEMINI_API_KEY', ''); 
 
-// --- MOCK TEMPORAL PARA ESTA VISTA PREVIA (ELIMÍNALO EN VERCEL) ---
-// En Vercel, borra esta función createClient entera y usa el import de la línea 4.
+// --- MOCK TEMPORAL PARA VISTA PREVIA (BORRAR AL USAR LA LÍNEA 3 REAL) ---
 const createClient = (url: string, key: string) => {
   const mockChain: any = {
     select: () => mockChain, eq: () => mockChain, single: () => mockChain,
